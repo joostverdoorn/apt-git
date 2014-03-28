@@ -6,6 +6,8 @@ import threading
 import time
 import Queue
 from git import *
+from datetime import datetime
+import shutil
 
 sources = ('github.com',)
 
@@ -25,14 +27,16 @@ def install(repositories):
 	for repository in repositories:
 			for source in sources:
 
-				weave(target=check_repository_address, args=(source, repository, valid_repository_queue))
+				checker = weave(target=check_repository_address, args=(source, repository, valid_repository_queue))
 
 
-	while(True):
-		print ".",
-		time.sleep(0.2)
+	while(checker.isAlive()):
+		try:
+			repository_data_queue.get(True,8)
+		except:
+			print 'No valid repositories were found. (did you spell everything right?)'
 
-	print addr
+	shutil.rmtree('.apt-git')
 
 def weave(**args):
 	thread = threading.Thread(**args)
@@ -48,6 +52,7 @@ def check_repository_address(source, repository, valid_repository_queue):
 	
 	if response.status==200:
 		addr = "https://"+source+"/"+repository+".git"
+		print "Valid repository found: ",addr
 		valid_repository_queue.put(addr)
 
 def valid_repository_queue_watcher(valid_repository_queue, repository_data_queue):
@@ -57,11 +62,14 @@ def valid_repository_queue_watcher(valid_repository_queue, repository_data_queue
 		weave(target=pull_repository_data, args=(addr, branch, repository_data_queue))
 
 def pull_repository_data(addr, branch, repository_data_queue):
-		repo = Repo.init(addr, bare=True)
+		print "Checking latest commit date for",addr,"on branch '",branch+"'."
+		repo = Repo.clone_from(addr, '.apt-git/test',commit='refs/heads/master')
+		latest = repo.heads.master.commit.authored_date
 
-
-
-
+		date = datetime.strftime(datetime.fromtimestamp(latest),'%Y-%m-%d')
+		time = datetime.strftime(datetime.fromtimestamp(latest),'%H:%M:%S')
+		print "Lastest commit was on",date,"at",time+"."
+		repository_data_queue.put((addr,latest))
 
 def remove(*repositories):
 	print repositories
