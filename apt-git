@@ -1,0 +1,86 @@
+#!/usr/bin/python
+
+import argparse
+import httplib
+import threading
+import time
+import Queue
+from git import *
+
+sources = ('github.com',)
+
+def find(repository):
+	for key, value in repo_dict.iteritems():   # iter on both keys and values
+		if key.startswith(repository):
+			res[key]=value
+
+		return res
+
+def install(repositories):
+	valid_repository_queue = Queue.Queue()
+	repository_data_queue = Queue.Queue()
+
+	weave(target=valid_repository_queue_watcher, args=(valid_repository_queue, repository_data_queue))
+
+	for repository in repositories:
+			for source in sources:
+
+				weave(target=check_repository_address, args=(source, repository, valid_repository_queue))
+
+
+	while(True):
+		print ".",
+		time.sleep(0.2)
+
+	print addr
+
+def weave(**args):
+	thread = threading.Thread(**args)
+	thread.daemon = True
+	thread.start()
+	return thread
+
+
+def check_repository_address(source, repository, valid_repository_queue):
+	http = httplib.HTTPSConnection(source, 443)
+	http.request("HEAD", "/"+repository)
+	response = http.getresponse()
+	
+	if response.status==200:
+		addr = "https://"+source+"/"+repository+".git"
+		valid_repository_queue.put(addr)
+
+def valid_repository_queue_watcher(valid_repository_queue, repository_data_queue):
+	while(True):
+		addr = valid_repository_queue.get(True)
+		branch = 'master'
+		weave(target=pull_repository_data, args=(addr, branch, repository_data_queue))
+
+def pull_repository_data(addr, branch, repository_data_queue):
+		repo = Repo.init(addr, bare=True)
+
+
+
+
+
+def remove(*repositories):
+	print repositories
+
+class FunctionCallAction(argparse.Action):
+	 def __call__(self, parser, namespace, values, option_string=None):
+			 setattr(namespace, self.dest, globals()[values])
+
+parser = argparse.ArgumentParser(description='Process some integers.',
+																 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+# parser.add_argument('--install')
+parser.add_argument('func', choices=['install','remove','update','upgrade','search'],
+									 action=FunctionCallAction,help='bluh')
+parser.add_argument('arguments', metavar='args', type=str, nargs='+',
+									 help='bla')
+
+args = parser.parse_args()
+
+# args.install(args.repositories)
+
+args.func(args.arguments)
