@@ -26,11 +26,11 @@ class Package:
 		self.installed = os.path.exists(self.install_dir)
 		print self.installed
 
+	def install(self):
 		# Create temp dir
 		if not self.installed:
 			os.makedirs(self.install_dir, 0775)
 
-	def install(self):	
 		print "The most up to date repository that was found is ", self.url, "."
 		print "Installing the repository at ", self.url, "to ", self.install_dir, "."
 
@@ -64,8 +64,9 @@ class Package:
 		self.repository.remotes.origin.pull(self.branch)
 		
 	def remove(self):
-		print os.path.dirname(self.install_dir)
-		if not self.installed: return
+		if not self.installed: 
+			print "Target directory not found."
+			return
 		shutil.rmtree(os.path.dirname(self.install_dir))
 
 

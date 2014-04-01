@@ -3,17 +3,18 @@
 
 import argparse
 import argcomplete
+import os
 
 # apt-git
 from package import Package
 
 # Global parameters
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 VERBOSE = False
 MAIN_DIR = os.environ['HOME'] + '/apt-git/'
 
-def install(*packages):
-	print "install"
+def install(packages):
+	print "Installing"
 
 	installers = list()
 
@@ -25,7 +26,7 @@ def install(*packages):
 	for installer in installers:
 		installer.join()
 
-def remove(*packages):
+def remove(packages):
 	print "remove"
 	removers = list()
 
@@ -137,8 +138,10 @@ class FunctionCallAction(argparse.Action):
 
 class PackageMapAction(argparse.Action):
 	 def __call__(self, parser, namespace, package_names, option_string=None):
-	 	for package_name in list(package_names):
-			setattr(namespace, self.dest, Package(package_name, main_dir=MAIN_DIR))
+	 	packages = list()
+	 	for package_name in package_names:
+			packages.append(Package(package_name, main_dir=MAIN_DIR))
+		setattr(namespace, self.dest, packages)
 
 # Create parser
 parser = argparse.ArgumentParser(
@@ -149,7 +152,7 @@ argcomplete.autocomplete(parser)
 # Define arguments
 parser.add_argument('-v','--verbose',dest='VERBOSE',action='store_true')
 parser.add_argument('-V','--version',action='version',version=VERSION)
-parser.add_argument('-T','--target-dir',action='store',des=MAIN_DIR)
+parser.add_argument('-T','--target-dir',dest='MAIN_DIR',action='store')
 parser.add_argument('command',choices=('install','remove','update','upgrade'),action=FunctionCallAction,help='Select a command.')
 parser.add_argument('arguments', metavar='args', type=str, action=PackageMapAction, nargs='+', help='Arguments to pass to the command.')
 
@@ -158,6 +161,7 @@ args = parser.parse_args()
 
 # Set flags
 VERBOSE = args.VERBOSE
+MAIN_DIR = args.MAIN_DIR
 
 # Apply chosen functionality to arguments
 args.command(args.arguments)

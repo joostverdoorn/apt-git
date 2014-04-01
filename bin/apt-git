@@ -1,3 +1,0 @@
-#!/bin/bash
-echo $PWD
-python ./apt-git $@
