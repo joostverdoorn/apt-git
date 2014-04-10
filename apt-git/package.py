@@ -3,16 +3,17 @@ from datetime import datetime
 
 import shutil
 import os.path
-import Queue
-import threading
 
+from work import *
 
-
-class Package: 
+class Package(Worker): 
 
 	source = "github.com"
 
 	def __init__(self, name, main_dir="/tmp", branch="master"):
+		super(self.__class__, self).__init__()
+
+		return
 		self.name = name
 
 		self.install_dir = os.path.join(main_dir, self.name)
@@ -25,6 +26,7 @@ class Package:
 
 		if self.installed:
 			self.repository = Repo(self.install_dir)
+
 
 	def install(self):
 		# Create temp dir
